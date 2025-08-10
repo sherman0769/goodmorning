@@ -309,11 +309,11 @@
       ctx.drawImage(image, sx, sy, sw, sh, dx, dy, dW, dH);
     }
 
-    function wrapLines(text, maxWidth){
+    function wrapText(ctx, text, maxWidth){
       const words = text.split(/(\s+)/); // 保留空白
       const lines=[]; let line='';
       for(const w of words){
-        const test=line + w; const m=ctx.measureText(test); if(m.width<=maxWidth||line===''){ line=test; }
+        const test=line + w; const m=ctx.measureText(test); if(m.width<=maxWidth||line===''){ line=test; } 
         else{ lines.push(line.trimEnd()); line=w.trimStart(); }
       }
       if(line) lines.push(line.trimEnd());
@@ -337,7 +337,7 @@
 
       // 自動換行寬度
       const maxTextW = (Number(wrapPercent.value)||90)/100 * w;
-      const lines = wrapLines(textInput.value||'早安 ☀️', maxTextW);
+      const lines = wrapText(ctx, textInput.value||'早安 ☀️', maxTextW);
 
       // 位置（相對 -> 實際）
       let x = state.tx * w;
@@ -397,16 +397,7 @@
       const wrap = (Number(wrapPercent.value)||90)/100 * outW;
 
       // 計算換行（需以輸出字型重新量測）
-      function wrapOut(text,maxW){
-        const words = text.split(/(\s+)/); const lines=[]; let line='';
-        for(const w of words){
-          const t=line + w; const m=o.measureText(t); if(m.width<=maxW || line===''){ line=t; }
-          else{ lines.push(line.trimEnd()); line=w.trimStart(); }
-        }
-        if(line) lines.push(line.trimEnd());
-        return lines.join('\n').split('\n');
-      }
-      const lines = wrapOut(textInput.value||'早安 ☀️', wrap);
+      const lines = wrapText(o, textInput.value||'早安 ☀️', wrap);
       const lineH = fontPx * lh; const blockH = lineH * lines.length;
       const x = state.tx * outW; const y = state.ty * outH; const startY = y - (blockH - lineH)/2;
 
@@ -425,15 +416,20 @@
     }
 
     // 複製到剪貼簿（PNG）
-    async function copyPNG(){
-      const url = stage.toDataURL('image/png');
-      const data = await (await fetch(url)).blob();
-      try{
-        await navigator.clipboard.write([new ClipboardItem({[data.type]: data})]);
-        alert('已複製預覽 PNG 到剪貼簿');
-      }catch(e){
-        alert('瀏覽器不支援直接複製圖片，請改用「下載 PNG」。');
-      }
+    async function copyPNG() {
+      stage.toBlob(async (blob) => {
+        if (!blob) {
+          alert('無法複製圖片，請稍後再試。');
+          return;
+        }
+        try {
+          await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+          alert('已複製預覽 PNG 到剪貼簿');
+        } catch (e) {
+          console.error('複製失敗:', e);
+          alert('瀏覽器不支援直接複製圖片，或操作未經授權。請改用「下載 PNG」。');
+        }
+      }, 'image/png');
     }
 
     // 綁定
@@ -446,6 +442,7 @@
     resizeCanvasToImage();
     textInput.value = '早安 ☀️\n今天也要發光！';
     render();
+    sampleBtn.click();
   </script>
 </body>
 </html>
