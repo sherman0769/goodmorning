@@ -3,37 +3,36 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>早安圖生成器</title>
+  <title>早安圖生成器 · GitHub + Vercel 版</title>
+  <meta name="description" content="左側控制台＋右側即時預覽，支援上傳背景、拖曳文字、陰影/描邊、遮罩、文字底色、cover/contain、不變形輸出，純前端可上傳 GitHub 並由 Vercel 託管。" />
   <style>
     :root{
-      --bg:#0b0f14;--panel:#111827;--panel-2:#0f172a;--muted:#94a3b8;--accent:#22c55e;--line:#1f2937;--btn:#2563eb
+      --bg:#0b1220;--panel:#0f172a;--panel2:#0b1020;--line:#1f2937;--muted:#9aa5b1;--brand:#3b82f6
     }
     *{box-sizing:border-box}
-    body{margin:0;background:linear-gradient(180deg,#0b1220,#0b0f14);color:#e5e7eb;font-family:"Microsoft JhengHei", "Noto Sans TC", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"}
+    html,body{height:100%}
+    body{margin:0;background:linear-gradient(180deg,#0b1220,#0a0e16);color:#e5e7eb;font-family:"Microsoft JhengHei","Noto Sans TC",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
     .app{display:flex;gap:16px;min-height:100vh;padding:16px}
-    .left{width:360px;max-width:46vw;background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.4);display:flex;flex-direction:column}
-    .right{flex:1;min-width:0;background:var(--panel-2);border:1px solid var(--line);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.45);position:relative;display:flex;flex-direction:column}
-    .header{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
-    .tabs{display:flex;gap:6px;padding:8px}
-    .tab-btn{flex:1;padding:10px 12px;border:1px solid var(--line);background:#0f172a;color:#e5e7eb;border-radius:10px;cursor:pointer}
-    .tab-btn[aria-selected="true"]{background:#1f2937}
+    .left{width:380px;max-width:48vw;background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.45);display:flex;flex-direction:column}
+    .right{flex:1;min-width:0;background:var(--panel2);border:1px solid var(--line);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.5);display:flex;flex-direction:column}
+    .header{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+    .tabs{display:flex;gap:8px;padding:10px}
+    .tab{flex:1;padding:10px 12px;background:#0e1627;border:1px solid var(--line);border-radius:10px;color:#e5e7eb;cursor:pointer}
+    .tab[aria-selected="true"]{background:#1d2536}
     .panel{padding:12px 14px;display:none}
     .panel.active{display:block}
     .field{display:flex;flex-direction:column;gap:8px;margin:10px 0}
-    .field label{font-size:12px;color:var(--muted)}
     .row{display:flex;gap:8px}
     input[type="text"],input[type="number"],select,textarea{width:100%;background:#0b1220;color:#e5e7eb;border:1px solid #223047;border-radius:10px;padding:10px}
     input[type="color"]{width:100%;height:40px;border:1px solid #223047;border-radius:10px;background:#0b1220}
     .btn{appearance:none;border:1px solid #2b3344;background:linear-gradient(180deg,#1f2937,#111827);color:#e5e7eb;padding:10px 14px;border-radius:10px;cursor:pointer}
-    .btn.primary{background:linear-gradient(180deg,#3b82f6,#1d4ed8);border-color:#1d4ed8}
+    .btn.primary{background:linear-gradient(180deg,var(--brand),#1d4ed8);border-color:#1d4ed8}
     .btn.ghost{background:#0b1220}
     .btn.full{width:100%}
-    .hint{font-size:12px;color:#9ca3af}
+    .hint{font-size:12px;color:var(--muted)}
 
-    /* 右側預覽 */
     .stage-wrap{position:relative;flex:1;display:flex;align-items:center;justify-content:center;padding:16px}
     canvas{max-width:100%;max-height:calc(100vh - 180px);border:1px dashed #334155;border-radius:12px;background:#0b1220}
-    .overlay{position:absolute;inset:16px;display:flex;align-items:center;justify-content:center;pointer-events:none}
     .drag-tip{position:absolute;bottom:22px;left:22px;background:rgba(0,0,0,.45);padding:6px 10px;border-radius:8px;font-size:12px;color:#cbd5e1}
 
     .footer{padding:12px 16px;border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap}
@@ -48,49 +47,55 @@
     <aside class="left">
       <div class="header">
         <strong>早安圖控制台</strong>
-        <span class="hint">本地離線使用</span>
+        <span class="hint">GitHub Pages / Vercel 可用</span>
       </div>
 
       <div class="tabs" role="tablist">
-        <button class="tab-btn" id="tab-upload" role="tab" aria-controls="panel-upload" aria-selected="true">上傳圖像</button>
-        <button class="tab-btn" id="tab-text" role="tab" aria-controls="panel-text" aria-selected="false">文字設定</button>
+        <button id="tabUpload" class="tab" role="tab" aria-controls="panelUpload" aria-selected="true">上傳圖像</button>
+        <button id="tabText" class="tab" role="tab" aria-controls="panelText" aria-selected="false">文字與樣式</button>
       </div>
 
       <!-- 上傳圖像面板 -->
-      <section id="panel-upload" class="panel active" role="tabpanel" aria-labelledby="tab-upload">
+      <section id="panelUpload" class="panel active" role="tabpanel" aria-labelledby="tabUpload">
         <div class="field">
           <label>選擇背景圖（JPG/PNG）</label>
           <input id="bgInput" type="file" accept="image/*" />
-          <div class="hint">小技巧：建議使用 16:9 或手機常用比例，解析度越高輸出越清晰。</div>
+          <div class="hint">建議 16:9 或 4:5；解析度越高輸出越清晰。</div>
         </div>
-        <div class="field">
-          <label>背景填充模式</label>
-          <select id="fitMode">
-            <option value="contain">等比置中（整張可見）</option>
-            <option value="cover">等比裁切（鋪滿畫面）</option>
-            <option value="stretch">拉伸鋪滿（可能變形）</option>
-          </select>
+        <div class="row">
+          <div class="field" style="flex:1">
+            <label>背景填充模式</label>
+            <select id="fitMode">
+              <option value="cover" selected>等比裁切（鋪滿，不變形）</option>
+              <option value="contain">等比置中（整張可見）</option>
+              <option value="stretch">拉伸鋪滿（可能變形）</option>
+            </select>
+          </div>
+          <div class="field" style="width:130px">
+            <label>暗角/遮罩</label>
+            <input id="overlayAlpha" type="number" step="0.05" min="0" max="0.8" value="0.25" />
+          </div>
         </div>
-        <div class="field row">
-          <button id="resetBtn" class="btn">重設</button>
+        <div class="row">
+          <button id="resetBtn" class="btn">重設文字位置</button>
           <button id="sampleBtn" class="btn ghost">載入示例背景</button>
         </div>
       </section>
 
       <!-- 文字設定面板 -->
-      <section id="panel-text" class="panel" role="tabpanel" aria-labelledby="tab-text">
+      <section id="panelText" class="panel" role="tabpanel" aria-labelledby="tabText">
         <div class="field">
-          <label>文字內容（可換行）</label>
+          <label>文字內容（支援換行；可拖曳右側文字移動）</label>
           <textarea id="textInput" rows="3" placeholder="早安 ☀️ 祝你今天順利！"></textarea>
         </div>
         <div class="row">
           <div class="field" style="flex:1">
             <label>字體</label>
             <select id="fontFamily">
-              <option value="'Microsoft JhengHei', 'Noto Sans TC', sans-serif">微軟正黑 / Noto Sans</option>
-              <option value="'Noto Serif TC', serif">Noto Serif TC（襯線）</option>
-              <option value="'PingFang TC', 'Heiti TC', 'Microsoft JhengHei', sans-serif">蘋方 / 黑體</option>
-              <option value="'Roboto', 'Noto Sans TC', sans-serif">Roboto</option>
+              <option value="'Microsoft JhengHei','Noto Sans TC',sans-serif">微軟正黑 / Noto Sans</option>
+              <option value="'Noto Serif TC',serif">Noto Serif（襯線）</option>
+              <option value="'PingFang TC','Heiti TC','Microsoft JhengHei',sans-serif">蘋方 / 黑體</option>
+              <option value="'Roboto','Noto Sans TC',sans-serif">Roboto</option>
             </select>
           </div>
           <div class="field" style="width:120px">
@@ -151,12 +156,26 @@
             <input id="wrapPercent" type="number" min="30" max="100" value="90" />
           </div>
         </div>
-        <div class="hint">拖曳右側文字可移動位置；系統會自動以原圖解析度匯出高畫質 PNG。</div>
+        <div class="row">
+          <div class="field" style="flex:1">
+            <label>文字底色（提升可讀性，可透明）</label>
+            <input id="bgTextColor" type="color" value="#000000" />
+          </div>
+          <div class="field" style="width:120px">
+            <label>底色透明度</label>
+            <input id="bgTextAlpha" type="number" step="0.05" min="0" max="0.9" value="0.25" />
+          </div>
+          <div class="field" style="width:120px">
+            <label>內距（px）</label>
+            <input id="bgTextPad" type="number" min="0" max="60" value="10" />
+          </div>
+        </div>
+        <div class="hint">拖曳右側文字可移動位置；輸出會以原圖解析度產生高畫質 PNG。</div>
       </section>
 
       <div class="footer">
         <button id="downloadBtn" class="btn primary">下載 PNG</button>
-        <button id="copyBtn" class="btn">複製到剪貼簿</button>
+        <button id="copyBtn" class="btn">複製預覽 PNG</button>
         <div class="spacer"></div>
         <span class="hint">© 2025 早安圖生成器</span>
       </div>
@@ -167,37 +186,35 @@
       <div class="header"><strong>即時預覽</strong><span id="sizeInfo" class="hint"></span></div>
       <div class="stage-wrap">
         <canvas id="stage" width="1280" height="720" aria-label="輸出畫布"></canvas>
-        <div id="dragTip" class="drag-tip">拖曳文字移動位置</div>
+        <div id="dragTip" class="drag-tip">拖曳文字移動位置（可用方向鍵微調）</div>
       </div>
     </section>
   </div>
 
   <script>
-    // 狀態
-    const state = {
-      img:null, imgW:1280, imgH:720,
-      // 文字相對位置（以 0~1 表示）
-      tx:0.5, ty:0.78,
-      // 畫面設定
-      fitMode:'contain'
-    };
+    // ===== 狀態 =====
+    const state = { img:null, imgW:1280, imgH:720, tx:0.5, ty:0.78, fitMode:'cover' };
 
-    // 元件
-    const tabUpload = document.getElementById('tab-upload');
-    const tabText = document.getElementById('tab-text');
-    const panelUpload = document.getElementById('panel-upload');
-    const panelText = document.getElementById('panel-text');
+    // ===== 取得元素 =====
     const stage = document.getElementById('stage');
     const ctx = stage.getContext('2d');
     const sizeInfo = document.getElementById('sizeInfo');
     const dragTip = document.getElementById('dragTip');
 
-    // 控制項
+    // tabs
+    const tabUpload = document.getElementById('tabUpload');
+    const tabText = document.getElementById('tabText');
+    const panelUpload = document.getElementById('panelUpload');
+    const panelText = document.getElementById('panelText');
+
+    // controls - 圖像
     const bgInput = document.getElementById('bgInput');
     const fitMode = document.getElementById('fitMode');
+    const overlayAlpha = document.getElementById('overlayAlpha');
     const resetBtn = document.getElementById('resetBtn');
     const sampleBtn = document.getElementById('sampleBtn');
 
+    // controls - 文字
     const textInput = document.getElementById('textInput');
     const fontFamily = document.getElementById('fontFamily');
     const fontWeight = document.getElementById('fontWeight');
@@ -210,13 +227,17 @@
     const shadowOffset = document.getElementById('shadowOffset');
     const align = document.getElementById('align');
     const wrapPercent = document.getElementById('wrapPercent');
+    const bgTextColor = document.getElementById('bgTextColor');
+    const bgTextAlpha = document.getElementById('bgTextAlpha');
+    const bgTextPad = document.getElementById('bgTextPad');
 
+    // actions
     const downloadBtn = document.getElementById('downloadBtn');
     const copyBtn = document.getElementById('copyBtn');
 
-    // 標籤切換
+    // ===== Tab 切換 =====
     function setTab(which){
-      const isUpload = which === 'upload';
+      const isUpload = which==='upload';
       panelUpload.classList.toggle('active', isUpload);
       panelText.classList.toggle('active', !isUpload);
       tabUpload.setAttribute('aria-selected', isUpload ? 'true':'false');
@@ -225,35 +246,27 @@
     tabUpload.addEventListener('click', ()=>setTab('upload'));
     tabText.addEventListener('click', ()=>setTab('text'));
 
-    // 載入背景
+    // ===== 背景圖載入 =====
     function loadImageFromFile(file){
       return new Promise((resolve,reject)=>{
         const reader = new FileReader();
-        reader.onload = e => {
-          const img = new Image();
-          img.onload = ()=> resolve(img);
-          img.onerror = reject;
-          img.src = e.target.result;
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
+        reader.onload = e => { const img = new Image(); img.onload=()=>resolve(img); img.onerror=reject; img.src=e.target.result; };
+        reader.onerror = reject; reader.readAsDataURL(file);
       });
     }
-
     bgInput.addEventListener('change', async (e)=>{
-      const f = e.target.files?.[0];
-      if(!f) return;
+      const f = e.target.files?.[0]; if(!f) return;
       const img = await loadImageFromFile(f);
       state.img = img; state.imgW = img.naturalWidth; state.imgH = img.naturalHeight;
       resizeCanvasToImage();
-      render();
-      setTab('text');
+      render(); setTab('text');
     });
 
     fitMode.addEventListener('change', ()=>{ state.fitMode = fitMode.value; render(); });
+    overlayAlpha.addEventListener('input', render);
     resetBtn.addEventListener('click', ()=>{ state.tx=0.5; state.ty=0.78; render(); });
 
-    // 載入示例（嵌入一張簡單漸層）
+    // 示例背景（漸層）
     sampleBtn.addEventListener('click', ()=>{
       const w=1600,h=900, c=document.createElement('canvas'); c.width=w; c.height=h; const x=c.getContext('2d');
       const g=x.createLinearGradient(0,0,0,h); g.addColorStop(0,'#f59e0b'); g.addColorStop(1,'#ef4444');
@@ -262,104 +275,117 @@
       img.src=c.toDataURL('image/png');
     });
 
-    // 自適應畫布大小（預覽）
+    // ===== 預覽畫布尺寸（依原圖比例，不變形） =====
     function resizeCanvasToImage(){
-      // 依容器大小調整預覽解析度，保留比例
       const box = stage.parentElement.getBoundingClientRect();
       const maxW = Math.min(box.width-2, 1600);
-      const ratio = state.imgW/state.imgH;
+      const ratio = (state.img ? state.imgW/state.imgH : 16/9);
       const w = Math.round(maxW);
       const h = Math.round(w/ratio);
       stage.width = w; stage.height = h;
-      sizeInfo.textContent = `預覽 ${w}×${h}｜原圖 ${state.imgW}×${state.imgH}`;
+      sizeInfo.textContent = state.img ? `預覽 ${w}×${h}｜原图 ${state.imgW}×${state.imgH}` : `預覽 ${w}×${h}`;
     }
-    window.addEventListener('resize', ()=>{ if(state.img) resizeCanvasToImage(); render(); });
+    window.addEventListener('resize', ()=>{ resizeCanvasToImage(); render(); });
 
-    // 文字拖曳
-    let dragging=false; let dragStart=null;
-    stage.addEventListener('pointerdown', (e)=>{
-      const {offsetX, offsetY} = e; dragging=true; dragStart={x:offsetX,y:offsetY}; stage.setPointerCapture(e.pointerId);
-    });
-    stage.addEventListener('pointermove', (e)=>{
-      if(!dragging) return;
-      const {offsetX, offsetY} = e;
-      state.tx = Math.max(0, Math.min(1, offsetX / stage.width));
-      state.ty = Math.max(0, Math.min(1, offsetY / stage.height));
-      render();
-    });
+    // ===== 拖曳文字定位 =====
+    let dragging=false;
+    stage.addEventListener('pointerdown', (e)=>{ dragging=true; stage.setPointerCapture(e.pointerId); });
+    stage.addEventListener('pointermove', (e)=>{ if(!dragging) return; const {offsetX,offsetY}=e; state.tx=Math.max(0,Math.min(1, offsetX/stage.width)); state.ty=Math.max(0,Math.min(1, offsetY/stage.height)); render(); });
     stage.addEventListener('pointerup', ()=>{ dragging=false; dragTip.style.display='none'; });
 
-    // 繪製工具
+    // 鍵盤微調（箭頭鍵）
+    window.addEventListener('keydown', (e)=>{
+      let step=0.005; if(e.shiftKey) step=0.02; let used=true;
+      if(e.key==='ArrowLeft') state.tx=Math.max(0,state.tx-step);
+      else if(e.key==='ArrowRight') state.tx=Math.min(1,state.tx+step);
+      else if(e.key==='ArrowUp') state.ty=Math.max(0,state.ty-step);
+      else if(e.key==='ArrowDown') state.ty=Math.min(1,state.ty+step);
+      else used=false; if(used){ e.preventDefault(); render(); }
+    });
+
+    // ===== 文字換行（CJK/中英混排友善） =====
+    function wrapAdvanced(text, maxWidth, measurer){
+      const paras = (text||'').split(/\r?\n/);
+      const lines=[];
+      for(const para of paras){
+        if(para===""){ lines.push(""); continue; }
+        const isCJK = /[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff]/.test(para);
+        if(!isCJK){
+          const tokens = para.split(/(\s+)/); // 保留空白
+          let line="";
+          for(const t of tokens){
+            const test=line + t; const w = measurer(test);
+            if(w<=maxWidth || line===""){ line=test; }
+            else{ lines.push(line.trimEnd()); line=t.trimStart(); }
+          }
+          if(line) lines.push(line.trimEnd());
+        }else{
+          let cur="";
+          for(const ch of para){
+            const test = cur + ch; const w = measurer(test);
+            if(w<=maxWidth || cur===""){ cur=test; }
+            else{ lines.push(cur); cur=ch; }
+          }
+          if(cur) lines.push(cur);
+        }
+      }
+      return lines;
+    }
+
+    // ===== 繪製 =====
     function drawImageFit(image, dx, dy, dW, dH, mode){
       const iw=image.naturalWidth, ih=image.naturalHeight; const ir=iw/ih; const dr=dW/dH;
       let sx=0, sy=0, sw=iw, sh=ih;
-      if(mode==='cover'){
-        if(ir>dr){ // 太寬 -> 裁左右
-          sh=ih; sw=ih*dr; sx=(iw-sw)/2; sy=0;
-        }else{ // 太高 -> 裁上下
-          sw=iw; sh=iw/dr; sx=0; sy=(ih-sh)/2;
-        }
-      }else if(mode==='contain'){
-        // 不裁切：計算目的尺寸置中
+      if(mode==='contain'){
         let dw=dW, dh=dH; if(ir>dr){ dh=dW/ir; dy+=(dH-dh)/2; } else { dw=dH*ir; dx+=(dW-dw)/2; }
-        ctx.drawImage(image, 0,0, iw, ih, dx, dy, dw, dh); return;
-      }else if(mode==='stretch'){
-        ctx.drawImage(image, 0,0, iw, ih, dx, dy, dW, dH); return;
+        ctx.drawImage(image,0,0,iw,ih,dx,dy,dw,dh); return;
+      }else if(mode==='cover'){
+        if(ir>dr){ sh=ih; sw=ih*dr; sx=(iw-sw)/2; sy=0; }
+        else { sw=iw; sh=iw/dr; sx=0; sy=(ih-sh)/2; }
+        ctx.drawImage(image,sx,sy,sw,sh,dx,dy,dW,dH); return;
+      }else{ // stretch
+        ctx.drawImage(image,0,0,iw,ih,dx,dy,dW,dH); return;
       }
-      ctx.drawImage(image, sx, sy, sw, sh, dx, dy, dW, dH);
-    }
-
-    function wrapText(ctx, text, maxWidth){
-      const words = text.split(/(\s+)/); // 保留空白
-      const lines=[]; let line='';
-      for(const w of words){
-        const test=line + w; const m=ctx.measureText(test); if(m.width<=maxWidth||line===''){ line=test; } 
-        else{ lines.push(line.trimEnd()); line=w.trimStart(); }
-      }
-      if(line) lines.push(line.trimEnd());
-      return lines.join('\n').split('\n');
     }
 
     function render(){
       const w=stage.width, h=stage.height; ctx.clearRect(0,0,w,h);
-      // 背景
       ctx.fillStyle = '#0b1220'; ctx.fillRect(0,0,w,h);
       if(state.img){ drawImageFit(state.img,0,0,w,h,state.fitMode); }
+      const ov = Math.max(0, Math.min(0.8, Number(overlayAlpha.value)||0));
+      if(ov>0){ ctx.fillStyle = `rgba(0,0,0,${ov})`; ctx.fillRect(0,0,w,h); }
 
-      // 文字樣式
+      // 設定文字樣式
       const size = Number(fontSize.value)||72;
       const lh = Number(lineHeight.value)||1.2;
-      const family = fontFamily.value;
-      const weight = String(fontWeight.value);
+      const family = fontFamily.value; const weight = String(fontWeight.value);
       ctx.font = `${weight} ${size}px ${family}`;
-      ctx.textAlign = align.value;
-      ctx.textBaseline = 'middle';
+      ctx.textAlign = align.value; ctx.textBaseline='middle';
 
-      // 自動換行寬度
-      const maxTextW = (Number(wrapPercent.value)||90)/100 * w;
-      const lines = wrapText(ctx, textInput.value||'早安 ☀️', maxTextW);
+      const maxW = (Number(wrapPercent.value)||90)/100 * w;
+      const measureW = (t)=> ctx.measureText(t).width;
+      const lines = wrapAdvanced(textInput.value||'早安 ☀️', maxW, measureW);
 
-      // 位置（相對 -> 實際）
-      let x = state.tx * w;
-      let y = state.ty * h;
+      const lineH = size*lh; const blockH = lineH*lines.length;
+      const x = state.tx*w; const y = state.ty*h; const startY = y - (blockH - lineH)/2;
 
-      // 計算文本區塊高度
-      const lineH = size * lh; const blockH = lineH * lines.length;
+      // 陰影
+      const sAlpha = Number(shadowAlpha.value)||0; const sOfs=Number(shadowOffset.value)||0;
+      ctx.shadowColor = `rgba(0,0,0,${sAlpha})`; ctx.shadowBlur=Math.max(8,sOfs*2); ctx.shadowOffsetX=sOfs; ctx.shadowOffsetY=sOfs;
 
-      // 陰影 / 外框
-      const sAlpha = Number(shadowAlpha.value)||0; const sOfs = Number(shadowOffset.value)||0;
-      ctx.shadowColor = `rgba(0,0,0,${sAlpha})`;
-      ctx.shadowBlur = Math.max(8, sOfs*2);
-      ctx.shadowOffsetX = sOfs; ctx.shadowOffsetY = sOfs;
+      // 描邊與填色
+      const sw = Number(strokeWidth.value)||0; ctx.lineWidth=sw; ctx.strokeStyle=strokeColor.value; ctx.fillStyle=fillColor.value;
 
-      // 填色與描邊
-      const sw = Number(strokeWidth.value)||0;
-      ctx.lineWidth = sw; ctx.strokeStyle = strokeColor.value; ctx.fillStyle = fillColor.value;
+      // 文字底色框
+      const pad = Number(bgTextPad.value)||0; const bga = Number(bgTextAlpha.value)||0; const bgc = bgTextColor.value;
+      if(bga>0 && pad>0){
+        const widths = lines.map(t=>measureW(t));
+        const bw = Math.max(...widths) + pad*2; const bh = lineH*lines.length + pad*2 - (lineH - size);
+        let bx = x; if(align.value==='center') bx=x-bw/2; else if(align.value==='right') bx=x-bw; const by = y - (bh/2);
+        ctx.save(); ctx.shadowColor='transparent'; ctx.fillStyle = hexToRgba(bgc, bga); roundRect(ctx, bx, by, bw, bh, 10); ctx.fill(); ctx.restore();
+      }
 
-      // 對齊位置微調：置中時，讓多行視覺中心落在 y
-      let startY = y - (blockH - lineH)/2;
-
-      // 繪製每一行
+      // 寫字
       for(let i=0;i<lines.length;i++){
         const line = lines[i]; const ly = startY + i*lineH;
         if(sw>0) ctx.strokeText(line, x, ly);
@@ -367,81 +393,99 @@
       }
     }
 
-    // 下載高解析 PNG（以原圖尺寸匯出；若無背景則用預覽尺寸）
+    function roundRect(ctx,x,y,w,h,r){
+      r = Math.min(r, w/2, h/2);
+      ctx.beginPath();
+      ctx.moveTo(x+r, y);
+      ctx.arcTo(x+w, y, x+w, y+h, r);
+      ctx.arcTo(x+w, y+h, x, y+h, r);
+      ctx.arcTo(x, y+h, x, y, r);
+      ctx.arcTo(x, y, x+w, y, r);
+      ctx.closePath();
+    }
+    function hexToRgba(hex, alpha){
+      const m = /^#?([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i.exec(hex);
+      if(!m) return `rgba(0,0,0,${alpha})`;
+      const r=parseInt(m[1],16), g=parseInt(m[2],16), b=parseInt(m[3],16);
+      return `rgba(${r},${g},${b},${alpha})`;
+    }
+
+    // ===== 高解析輸出（原圖尺寸） =====
     function exportPNG(){
       const outW = state.img ? state.imgW : stage.width;
       const outH = state.img ? state.imgH : stage.height;
       const out = document.createElement('canvas'); out.width=outW; out.height=outH; const o=out.getContext('2d');
       // 背景
-      o.fillStyle = '#0b1220'; o.fillRect(0,0,outW,outH);
+      o.fillStyle='#0b1220'; o.fillRect(0,0,outW,outH);
       if(state.img){
-        // 背景套用相同 fit 模式
-        const mode=state.fitMode; const iw=state.imgW, ih=state.imgH; const ir=iw/ih; const dr=outW/outH;
-        if(mode==='contain'){
+        const iw=state.imgW, ih=state.imgH, ir=iw/ih, dr=outW/outH;
+        if(state.fitMode==='contain'){
           let dx=0,dy=0,dw=outW,dh=outH; if(ir>dr){ dh=outW/ir; dy=(outH-dh)/2; } else { dw=outH*ir; dx=(outW-dw)/2; }
           o.drawImage(state.img,0,0,iw,ih,dx,dy,dw,dh);
-        }else if(mode==='cover'){
+        }else if(state.fitMode==='cover'){
           let sx=0,sy=0,sw=iw,sh=ih; if(ir>dr){ sh=ih; sw=ih*dr; sx=(iw-sw)/2; } else { sw=iw; sh=iw/dr; sy=(ih-sh)/2; }
           o.drawImage(state.img,sx,sy,sw,sh,0,0,outW,outH);
         }else{
           o.drawImage(state.img,0,0,iw,ih,0,0,outW,outH);
         }
       }
-      // 文字（依比例換算）
-      const scaleX = outW / stage.width; const scaleY = outH / stage.height;
-      const fontPx = (Number(fontSize.value)||72) * scaleX; // 以寬度比例為準
-      const lh = Number(lineHeight.value)||1.2;
-      const family = fontFamily.value; const weight= String(fontWeight.value);
-      o.font = `${weight} ${fontPx}px ${family}`;
-      o.textAlign = align.value; o.textBaseline='middle';
-      const wrap = (Number(wrapPercent.value)||90)/100 * outW;
+      const ov = Math.max(0, Math.min(0.8, Number(overlayAlpha.value)||0));
+      if(ov>0){ o.fillStyle=`rgba(0,0,0,${ov})`; o.fillRect(0,0,outW,outH); }
 
-      // 計算換行（需以輸出字型重新量測）
-      const lines = wrapText(o, textInput.value||'早安 ☀️', wrap);
-      const lineH = fontPx * lh; const blockH = lineH * lines.length;
-      const x = state.tx * outW; const y = state.ty * outH; const startY = y - (blockH - lineH)/2;
+      // 文字樣式（以輸出比例計）
+      const scale = outW / stage.width; // 依寬度縮放
+      const size = (Number(fontSize.value)||72) * scale;
+      const lh = Number(lineHeight.value)||1.2;
+      const family = fontFamily.value; const weight=String(fontWeight.value);
+      o.font = `${weight} ${size}px ${family}`; o.textAlign=align.value; o.textBaseline='middle';
+
+      const wrapW = (Number(wrapPercent.value)||90)/100 * outW;
+      const lines = wrapAdvanced(textInput.value||'早安 ☀️', wrapW, (t)=>o.measureText(t).width);
+
+      const lineH = size*lh; const blockH=lineH*lines.length;
+      const x=state.tx*outW; const y=state.ty*outH; const startY = y - (blockH - lineH)/2;
+
+      // 文字底色
+      const pad = Number(bgTextPad.value)||0; const bga=Number(bgTextAlpha.value)||0; const bgc=bgTextColor.value;
+      if(bga>0 && pad>0){
+        const widths = lines.map(t=>o.measureText(t).width);
+        const bw = Math.max(...widths) + pad*2; const bh = blockH + pad*2 - (lineH - size);
+        let bx = x; if(align.value==='center') bx=x-bw/2; else if(align.value==='right') bx=x-bw; const by = y - bh/2;
+        o.save(); o.shadowColor='transparent'; o.fillStyle=hexToRgba(bgc,bga); roundRect(o,bx,by,bw,bh,16); o.fill(); o.restore();
+      }
 
       // 陰影 / 外框
-      const sAlpha = Number(shadowAlpha.value)||0; const sOfs = Number(shadowOffset.value)||0;
-      o.shadowColor = `rgba(0,0,0,${sAlpha})`; o.shadowBlur=Math.max(8,sOfs*2); o.shadowOffsetX=sOfs; o.shadowOffsetY=sOfs;
-      const sw = (Number(strokeWidth.value)||0) * scaleX; o.lineWidth=sw; o.strokeStyle=strokeColor.value; o.fillStyle=fillColor.value;
+      const sAlpha = Number(shadowAlpha.value)||0; const sOfs=Number(shadowOffset.value)||0;
+      o.shadowColor=`rgba(0,0,0,${sAlpha})`; o.shadowBlur=Math.max(8,sOfs*2); o.shadowOffsetX=sOfs; o.shadowOffsetY=sOfs;
+      const sw=(Number(strokeWidth.value)||0)*scale; o.lineWidth=sw; o.strokeStyle=strokeColor.value; o.fillStyle=fillColor.value;
+
       for(let i=0;i<lines.length;i++){
         const line = lines[i]; const ly = startY + i*lineH;
         if(sw>0) o.strokeText(line, x, ly);
         o.fillText(line, x, ly);
       }
 
-      const url = out.toDataURL('image/png');
-      const a=document.createElement('a'); a.href=url; a.download='good-morning.png'; a.click();
+      const url = out.toDataURL('image/png'); const a=document.createElement('a'); a.href=url; a.download='good-morning.png'; a.click();
     }
 
-    // 複製到剪貼簿（PNG）
-    async function copyPNG() {
-      stage.toBlob(async (blob) => {
-        if (!blob) {
-          alert('無法複製圖片，請稍後再試。');
-          return;
-        }
-        try {
-          await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
-          alert('已複製預覽 PNG 到剪貼簿');
-        } catch (e) {
-          console.error('複製失敗:', e);
-          alert('瀏覽器不支援直接複製圖片，或操作未經授權。請改用「下載 PNG」。');
-        }
+    async function copyPreview(){
+      stage.toBlob(async (blob)=>{
+        try{ await navigator.clipboard.write([new ClipboardItem({[blob.type]: blob})]); alert('已複製預覽 PNG'); }
+        catch{ alert('瀏覽器不支援直接複製圖片，請改用「下載 PNG」。'); }
       }, 'image/png');
     }
 
     // 綁定
-    [textInput,fontFamily,fontWeight,fontSize,lineHeight,fillColor,strokeColor,strokeWidth,shadowAlpha,shadowOffset,align,wrapPercent]
+    [textInput,fontFamily,fontWeight,fontSize,lineHeight,fillColor,strokeColor,strokeWidth,shadowAlpha,shadowOffset,align,wrapPercent,bgTextColor,bgTextAlpha,bgTextPad]
       .forEach(el=> el.addEventListener('input', render));
     downloadBtn.addEventListener('click', exportPNG);
-    copyBtn.addEventListener('click', copyPNG);
+    copyBtn.addEventListener('click', copyPreview);
 
     // 初始
     resizeCanvasToImage();
     textInput.value = '早安 ☀️\n今天也要發光！';
     render();
+    // 預載一張示例
     sampleBtn.click();
   </script>
 </body>
